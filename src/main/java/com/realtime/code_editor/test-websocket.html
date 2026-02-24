@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #messages {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background: #f5f5f5;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+<h1>WebSocket Backend Test</h1>
+
+<div id="status" class="status disconnected">
+    Status: Disconnected
+</div>
+
+<div>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+    <button onclick="sendTestMessage()">Send Test Code Change</button>
+    <button onclick="joinAsUser()">Join as User</button>
+</div>
+
+<h3>Messages:</h3>
+<div id="messages"></div>
+
+<script>
+    let stompClient = null;
+    let userId = 'test-user-' + Math.random().toString(36).substr(2, 9);
+    let username = 'TestUser' + Math.floor(Math.random() * 1000);
+
+    function setConnected(connected) {
+        const statusDiv = document.getElementById('status');
+        if (connected) {
+            statusDiv.className = 'status connected';
+            statusDiv.textContent = 'Status: Connected ✅';
+        } else {
+            statusDiv.className = 'status disconnected';
+            statusDiv.textContent = 'Status: Disconnected ❌';
+        }
+    }
+
+    function connect() {
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = StompJs.Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            setConnected(true);
+            showMessage('Connected to WebSocket! 🎉', 'system');
+            console.log('Connected: ' + frame);
+
+            // Subscribe to code changes
+            stompClient.subscribe('/topic/code/changes', function (message) {
+                const change = JSON.parse(message.body);
+                showMessage('Code change from ' + change.username + ': ' +
+                    change+'code');
+            });
+
+            // Subscribe to user presence
+            stompClient.subscribe('/topic/user/presence', function (message) {
+                const user = JSON.parse(message.body);
+                showMessage('User ' + user.username + ' is ' +
+                    (user.online ? 'online' : 'offline'), 'presence');
+            });
+
+            // Subscribe to initial code
+            stompClient.subscribe('/user/queue/code/initial', function (message) {
+                const change = JSON.parse(message.body);
+                showMessage('Initial code received: ' + change.content, 'initial');
+            });
+        }, function(error) {
+            setConnected(false);
+            showMessage('Error: ' + error, 'error');
+        });
+    }
+
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        setConnected(false);
+        showMessage('Disconnected', 'system');
+    }
+
+    function joinAsUser() {
+        if (stompClient && stompClient.connected) {
+            const user = {
+                userId: userId,
+                username: username,
+                color: '#' + Math.floor(Math.random()*16777215).toString(16),
+                online: true,
+                cursorPosition: 0
+            };
+
+            stompClient.send("/app/user/join", {}, JSON.stringify(user));
+            showMessage('Sent join request as ' + username, 'sent');
+        } else {
+            alert('Please connect first!');
+        }
+    }
+
+    function sendTestMessage() {
+        if (stompClient && stompClient.connected) {
+            const change = {
+                userId: userId,
+                username: username,
+                content: '// Test code from ' + username + '\nconsole.log("Hello WebSocket!");',
+                cursorPosition: 0,
+                color: '#FF6B6B',
+                timestamp: Date.now()
+            };
+
+            stompClient.send("/app/code/change", {}, JSON.stringify(change));
+            showMessage('Sent test code change', 'sent');
+        } else {
+            alert('Please connect first!');
+        }
+    }
+
+    function showMessage(message, type) {
+        const messagesDiv = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        messageDiv.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+
+        if (type === 'error') {
+            messageDiv.style.borderLeftColor = '#dc3545';
+        } else if (type === 'sent') {
+            messageDiv.style.borderLeftColor = '#28a745';
+        } else if (type === 'system') {
+            messageDiv.style.borderLeftColor = '#6c757d';
+        }
+
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+</script>
+</body>
+</html>
