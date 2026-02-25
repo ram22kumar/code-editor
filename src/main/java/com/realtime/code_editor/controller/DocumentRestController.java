@@ -12,10 +12,21 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 public class DocumentRestController {
 
     private final DocumentService documentService;
+
+    // ADD THIS - List all documents
+    @GetMapping
+    public ResponseEntity<List<CodeDocument>> getAllDocuments() {
+        try {
+            List<CodeDocument> documents = documentService.getAllDocuments();
+            return ResponseEntity.ok(documents);
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of()); // Return empty list on error
+        }
+    }
 
     @PostMapping
     public ResponseEntity<CodeDocument> createDocument(
@@ -23,8 +34,12 @@ public class DocumentRestController {
             @RequestParam String ownerId,
             @RequestParam(required = false) String language) {
 
-        CodeDocument document = documentService.createDocument(title, ownerId, language);
-        return ResponseEntity.ok(document);
+        try {
+            CodeDocument doc = documentService.createDocument(title, ownerId, language);
+            return ResponseEntity.ok(doc);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping("/{id}")

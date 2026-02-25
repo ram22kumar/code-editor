@@ -35,6 +35,9 @@ public class DocumentService {
     public Optional<CodeDocument> getDocument(String documentId) {
         return documentRepository.findById(documentId);
     }
+    public List<CodeDocument> getAllDocuments() {
+        return documentRepository.findAll();
+    }
 
     public List<CodeDocument> getUserDocuments(String userId) {
         return documentRepository.findByOwnerId(userId);
