@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+//@CrossOrigin(originPatterns = "*")
 public class DocumentRestController {
 
     private final DocumentService documentService;
