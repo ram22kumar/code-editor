@@ -37,7 +37,7 @@ public class CodeEditorController {
      */
     @MessageMapping("/document/{documentId}/join")
     public void handleJoin(
-            @DestinationVariable Long documentId,
+            @DestinationVariable String documentId,
             UserPresenceDTO userPresence) {
 
         log.info("User {} joining document {}", userPresence.getUsername(), documentId);

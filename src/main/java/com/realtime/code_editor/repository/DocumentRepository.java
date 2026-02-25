@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface DocumentRepository extends MongoRepository<CodeDocument, String> {
+public interface DocumentRepository extends MongoRepository<CodeDocument, String> {  // String ID
     List<CodeDocument> findByOwnerId(String ownerId);
     List<CodeDocument> findByActiveUserIdsContaining(String userId);
 }
