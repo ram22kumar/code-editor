@@ -94,9 +94,8 @@ public class CodeEditorController {
 
             // CRITICAL: Send list of existing users to the new joiner
             for (UserPresenceDTO existingUser : existingUsers) {
-                messagingTemplate.convertAndSendToUser(
-                        user.getId().toString(),
-                        "/queue/document/" + documentId + "/existing-users",
+                messagingTemplate.convertAndSend(
+                        "/topic/document/" + documentId + "/presence",
                         existingUser
                 );
             }
